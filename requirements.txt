@@ -1,0 +1,12 @@
+
+fastapi
+uvicorn[standard]
+python-multipart
+moviepy
+ffmpeg-python
+openai-whisper
+transformers
+sentencepiece
+torch
+soundfile
+aiofiles

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Video Summarizer - Transform Videos into Intelligent Summaries</title>
+    <meta name="description"
+        content="AI-powered video summarization tool that converts videos to concise summaries using advanced machine learning">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <h1 class="header-title">AI Video Summarizer</h1>
+                <p class="header-subtitle">Transform your videos into concise, intelligent summaries</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+
+            <!-- Upload Section -->
+            <div id="upload-section" class="card">
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">📹</div>
+                    <h3 class="upload-title">Upload Your Video</h3>
+                    <p class="upload-description">Drag and drop your video file here, or click to browse</p>
+                    <input type="file" id="file-input" accept="video/*" style="display: none;">
+                    <button class="upload-button" id="upload-button">Choose Video File</button>
+                    <p class="upload-formats">Supported formats: MP4, AVI, MOV, WMV</p>
+                </div>
+
+                <!-- Processing Stages Preview -->
+                <div class="stages-preview">
+                    <h4>Processing Stages:</h4>
+                    <div class="stage-preview">
+                        <span class="stage-icon">🎵</span>
+                        <span>1. Video to Audio</span>
+                    </div>
+                    <div class="stage-preview">
+                        <span class="stage-icon">📝</span>
+                        <span>2. Audio to Text</span>
+                    </div>
+                    <div class="stage-preview">
+                        <span class="stage-icon">✨</span>
+                        <span>3. Text to Summary</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Processing Section -->
+            <div id="processing-section" class="card hidden">
+                <h2 class="processing-title">Processing Your Video</h2>
+                <p id="file-name" class="file-name"></p>
+
+                <div class="stages-container">
+                    <!-- Stage 1: Video to Audio -->
+                    <div class="stage" id="stage-1">
+                        <div class="stage-icon-container">
+                            <span class="stage-number">🎵</span>
+                            <span class="stage-check hidden">✅</span>
+                        </div>
+                        <div class="stage-content">
+                            <div class="stage-header">
+                                <h3 class="stage-title">Extracting Audio</h3>
+                                <div class="stage-status">
+                                    <span class="progress-text" id="progress-1">0%</span>
+                                    <span class="completed-text hidden">Completed ✓</span>
+                                </div>
+                            </div>
+                            <p class="stage-description">Converting video to audio format</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-1"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 2: Audio to Text -->
+                    <div class="stage" id="stage-2">
+                        <div class="stage-icon-container">
+                            <span class="stage-number">📝</span>
+                            <span class="stage-check hidden">✅</span>
+                        </div>
+                        <div class="stage-content">
+                            <div class="stage-header">
+                                <h3 class="stage-title">Transcribing Speech</h3>
+                                <div class="stage-status">
+                                    <span class="progress-text" id="progress-2">0%</span>
+                                    <span class="completed-text hidden">Completed ✓</span>
+                                </div>
+                            </div>
+                            <p class="stage-description">Converting audio to text using AI</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-2"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stage 3: Text to Summary -->
+                    <div class="stage" id="stage-3">
+                        <div class="stage-icon-container">
+                            <span class="stage-number">✨</span>
+                            <span class="stage-check hidden">✅</span>
+                        </div>
+                        <div class="stage-content">
+                            <div class="stage-header">
+                                <h3 class="stage-title">Generating Summary</h3>
+                                <div class="stage-status">
+                                    <span class="progress-text" id="progress-3">0%</span>
+                                    <span class="completed-text hidden">Completed ✓</span>
+                                </div>
+                            </div>
+                            <p class="stage-description">Creating intelligent summary using LLM</p>
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progress-fill-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Overall Progress -->
+                <div class="overall-progress">
+                    <p class="overall-text" id="overall-text">Overall Progress: Stage 1 of 3</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="overall-progress-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Section -->
+            <div id="summary-section" class="card hidden">
+                <div class="summary-header">
+                    <div class="success-icon">🎉</div>
+                    <h2 class="summary-title">Summary Complete!</h2>
+                </div>
+
+                <div class="video-info">
+                    <div class="info-item">
+                        <span class="info-label">Video:</span>
+                        <span id="summary-file-name" class="info-value"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value success">✅ Successfully Processed</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Processed:</span>
+                        <span id="processed-time" class="info-value"></span>
+                    </div>
+                </div>
+
+                <div class="summary-content">
+                    <div class="summary-header-actions">
+                        <h3>AI-Generated Summary</h3>
+                        <div class="summary-actions">
+                            <button class="action-button" id="copy-button">📋 Copy</button>
+                            <button class="action-button" id="download-button">💾 Download</button>
+                        </div>
+                    </div>
+                    <div class="summary-text" id="summary-text"></div>
+                </div>
+
+                <div class="reset-section">
+                    <button class="reset-button" id="reset-button">Process Another Video</button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
