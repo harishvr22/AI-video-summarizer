@@ -1,28 +1,49 @@
 
-# AI Video Summarizer Project
 
-## Setup
-```bash
-python -m venv .venv
-.venv\Scripts\activate   # Windows
-# source .venv/bin/activate  # Mac/Linux
-pip install -r requirements.txt
-```
 
-## Download Models (one-time, while online)
-```bash
-python download_models.py
-```
+# AI Video Summarizer
 
-## Run Backend
-```bash
-uvicorn backend.app:app --host 127.0.0.1 --port 8000 --reload
-```
+## Overview
+AI Video Summarizer is a machine learning–based application that generates concise textual summaries from video content. The system is designed to help users quickly understand the key information from long videos without watching them entirely, thereby saving time and improving productivity.
 
-## Run Frontend
-```bash
-cd frontend
-python -m http.server 5500
-```
+The project focuses on applying artificial intelligence techniques to process video data and produce meaningful summaries in a practical manner.
 
-Open http://localhost:5500 in your browser.
+---
+
+## Problem Statement
+The rapid increase in video-based content across education, training, and online platforms has made manual video consumption inefficient. Extracting important points from long videos is time-consuming. An automated system is required to summarize video content accurately and efficiently.
+
+---
+
+## Solution Description
+The system accepts a video as input and processes it to extract relevant information. Using natural language processing techniques, the extracted content is analyzed and converted into a concise text summary that captures the core ideas of the video.
+
+---
+
+## Key Features
+- Automated video summarization
+- Reduces time required to understand long videos
+- Generates concise and readable text summaries
+- Suitable for educational and informational content
+- Simple and extensible design
+
+---
+
+## Technology Stack
+- Programming Language: Python  
+- Domain: Artificial Intelligence / Machine Learning  
+- Techniques: Video processing, Natural Language Processing  
+- Development Environment: Visual Studio Code  
+
+---
+
+## System Workflow
+1. User provides a video file as input  
+2. Relevant information is extracted from the video  
+3. Extracted content is processed using AI/NLP techniques  
+4. A summarized text output is generated  
+5. Summary is saved or displayed to the user  
+
+---
+
+## Project Structure
