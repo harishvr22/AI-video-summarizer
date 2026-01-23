@@ -37,10 +37,18 @@ async def summarize_video(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     wav_path = UPLOADS / (save_path.stem + ".wav")
+    print(f"[1/3] Extracting audio from {filename}...")
     extract_audio(str(save_path), str(wav_path))
+    print(f"[1/3] ✓ Audio extracted to {wav_path.name}")
 
-    transcript, _ = transcribe(str(wav_path))
+    print(f"[2/3] Loading Whisper model and transcribing...")
+    # Use default model/config from transcribe() to reduce hallucinations
+    transcript, segments = transcribe(str(wav_path))
+    print(f"[2/3] ✓ Transcription complete ({len(transcript)} chars)")
+
+    print(f"[3/3] Loading BART model and generating summary...")
     summary = summarize_text(transcript)
+    print(f"[3/3] ✓ Summary generated ({len(summary)} chars)")
 
     (UPLOADS / f"{save_path.stem}_transcript.txt").write_text(transcript, encoding="utf-8")
     (UPLOADS / f"{save_path.stem}_summary.txt").write_text(summary, encoding="utf-8")

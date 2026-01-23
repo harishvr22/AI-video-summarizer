@@ -1,6 +1,24 @@
-# Ignore Python virtual environment
-.venv/
+# Python virtual environment
+venv/
 
-# Ignore Python cache files
+# Python cache
 __pycache__/
 *.pyc
+
+# Environment variables
+.env
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Model files
+*.pt
+*.bin
+# Generated data (uploads, transcripts, summaries)
+data/uploads/
+*.zip
+git status
