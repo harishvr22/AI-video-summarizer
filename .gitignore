@@ -22,3 +22,6 @@ Thumbs.db
 data/uploads/
 *.zip
 git status
+.vscode/
+git rm --cached .vscode/settings.json
+
