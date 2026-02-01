@@ -1,13 +1,14 @@
 import nltk
 from nltk.tokenize import sent_tokenize
 
-# Download once (safe even if it runs again)
+# Download required NLTK resources (safe to call multiple times)
 nltk.download("punkt", quiet=True)
+nltk.download("punkt_tab", quiet=True)
 
 def chunk_text(text, max_words=200):
     """
-    Split text into chunks using sentences.
-    This avoids breaking sentence meaning.
+    Split text into chunks using sentences
+    without breaking sentence meaning.
     """
     sentences = sent_tokenize(text)
 
@@ -15,15 +16,14 @@ def chunk_text(text, max_words=200):
     current_chunk = ""
 
     for sentence in sentences:
-        # Check word count if we add this sentence
         if len((current_chunk + " " + sentence).split()) <= max_words:
-            current_chunk = current_chunk + " " + sentence
+            current_chunk += " " + sentence
         else:
-            chunks.append(current_chunk.strip())
+            if current_chunk.strip():
+                chunks.append(current_chunk.strip())
             current_chunk = sentence
 
-    # Add remaining text
-    if current_chunk:
+    if current_chunk.strip():
         chunks.append(current_chunk.strip())
 
     return chunks
