@@ -1,11 +1,29 @@
+import nltk
+from nltk.tokenize import sent_tokenize
 
-def chunk_text(text: str, max_words: int = 700, overlap: int = 120):
-    words = text.split()
+# Download once (safe even if it runs again)
+nltk.download("punkt", quiet=True)
+
+def chunk_text(text, max_words=200):
+    """
+    Split text into chunks using sentences.
+    This avoids breaking sentence meaning.
+    """
+    sentences = sent_tokenize(text)
+
     chunks = []
-    i = 0
-    step = max(1, max_words - overlap)
-    while i < len(words):
-        chunk = " ".join(words[i:i+max_words])
-        chunks.append(chunk)
-        i += step
+    current_chunk = ""
+
+    for sentence in sentences:
+        # Check word count if we add this sentence
+        if len((current_chunk + " " + sentence).split()) <= max_words:
+            current_chunk = current_chunk + " " + sentence
+        else:
+            chunks.append(current_chunk.strip())
+            current_chunk = sentence
+
+    # Add remaining text
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
     return chunks
