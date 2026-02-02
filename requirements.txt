@@ -1,22 +1,11 @@
-# --- Backend Framework ---
-fastapi==0.110.0
-uvicorn==0.29.0
-python-multipart==0.0.9
-
-# --- Video Processing ---
+fastapi
+uvicorn
+python-multipart
 moviepy==1.0.3
-
-# --- Speech to Text ---
-openai-whisper==20231117
-torch==2.2.2
-torchaudio==2.2.2
-torchvision==0.17.2
-
-# --- Text Summarization ---
-transformers==4.39.3
-sentencepiece==0.2.0
-
-# --- Utilities ---
+nltk
 numpy
-tqdm
-requests
+torch
+torchaudio
+transformers==4.36.2
+openai-whisper
+ffmpeg-python
