@@ -1,3 +1,4 @@
+import os
 import whisper
 import torch
 
@@ -18,13 +19,22 @@ def clean_text(text: str) -> str:
     return text
 
 
-def load_whisper(size="medium"):
-    if size not in _models:
-        _models[size] = whisper.load_model(size)
-    return _models[size]
+def load_whisper(size=None, device=None):
+    """Load and cache Whisper models.
+
+    Defaults to a smaller model to reduce memory. Configure with WHISPER_SIZE env var.
+    """
+    size = size or os.getenv("WHISPER_SIZE", "small")
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    key = f"{size}:{device}"
+    if key not in _models:
+        # pass device to whisper.load_model to avoid unnecessary GPU/CPU allocation surprises
+        _models[key] = whisper.load_model(size, device=device)
+    return _models[key]
 
 
-def transcribe(wav_path: str, model_size="medium"):
+def transcribe(wav_path: str, model_size=None):
+    # If model_size is None, load_whisper will use WHISPER_SIZE env var (default: "small")
     model = load_whisper(model_size)
     fp16 = torch.cuda.is_available()
 
