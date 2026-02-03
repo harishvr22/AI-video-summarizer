@@ -54,3 +54,10 @@ async def summarize_video(file: UploadFile = File(...)):
     (UPLOADS / f"{save_path.stem}_summary.txt").write_text(summary, encoding="utf-8")
 
     return {"summary": summary, "transcript": transcript[:2000]}
+
+import os
+import uvicorn
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("backend.app:app", host="0.0.0.0", port=port)
