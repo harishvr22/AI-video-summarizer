@@ -13,9 +13,12 @@ const fileInput = document.getElementById('file-input');
 const uploadButton = document.getElementById('upload-button');
 
 // Initialize event listeners
-document.addEventListener('DOMContentLoaded', function() {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeEventListeners);
+} else {
+    // DOM already ready (scripts loaded at end) — call directly
     initializeEventListeners();
-});
+}
 
 function initializeEventListeners() {
     // File upload events
@@ -32,6 +35,11 @@ function initializeEventListeners() {
     document.getElementById('copy-button').addEventListener('click', copyToClipboard);
     document.getElementById('download-button').addEventListener('click', downloadSummary);
     document.getElementById('reset-button').addEventListener('click', resetApp);
+
+    // History page loader (runs when on history.html)
+    if (document.getElementById('history-list')) {
+        loadHistoryPage();
+    }
     
     // Prevent default drag behaviors on document
     document.addEventListener('dragover', e => e.preventDefault());
@@ -279,3 +287,127 @@ function sleep(ms) {
 function showAlert(message) {
     alert(message);
 }
+
+// Activity render helpers
+function renderActivities(activities, container) {
+    if (!activities || activities.length === 0) {
+        container.innerHTML = '<p class="muted">No activity yet.</p>';
+        return;
+    }
+    container.innerHTML = activities.map(a => {
+        const processed = a.processed_time ? new Date(a.processed_time).toLocaleString() : '—';
+        const file = a.file || a.id;
+        return `
+            <div class="activity-item">
+                <div class="activity-title">${escapeHtml(file)}</div>
+                <div class="activity-meta"><small>${processed}</small></div>
+                <div class="activity-actions">
+                    ${a.transcript ? `<a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.transcript)}" class="activity-link" target="_blank">Transcript</a>` : ''}
+                    ${a.summary ? `<a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.summary)}" class="activity-link" target="_blank">Summary</a>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// small helper to avoid XSS in template
+function escapeHtml(unsafe) {
+    return unsafe.replace(/[&<"'">]/g, function(m) {
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+    });
+}
+
+// History page utilities
+async function loadHistoryPage() {
+    const list = document.getElementById('history-list');
+    if (!list) return;
+
+    // Default state in HTML is "No data available." (centered with .empty)
+    // Only replace content when we have actual activities to render.
+    try {
+        const res = await fetch('http://127.0.0.1:8000/activities/');
+        if (!res.ok) {
+            // leave default message as-is
+            list.classList.add('empty');
+            return;
+        }
+
+        const data = await res.json();
+        const activities = data.activities || [];
+        if (!activities.length) {
+            // no activities — leave default
+            list.classList.add('empty');
+            return;
+        }
+
+        // Render results (remove empty state)
+        list.classList.remove('empty');
+        renderHistory(activities, list);
+    } catch (err) {
+        // network error — keep default message
+        list.classList.add('empty');
+    }
+}
+
+function renderHistory(activities, container) {
+    if (!activities || activities.length === 0) {
+        container.innerHTML = '<p class="muted">No uploads yet.</p>';
+        return;
+    }
+
+    container.innerHTML = activities.map(a => {
+        const processed = a.processed_time ? new Date(a.processed_time).toLocaleString() : '—';
+        const file = escapeHtml(a.file || a.id);
+        const transcriptLink = a.transcript ? ` <a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.transcript)}" class="activity-link" target="_blank">Transcript</a>` : '';
+        const summaryLink = a.summary ? ` <a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.summary)}" class="activity-link" target="_blank">Summary File</a>` : '';
+        const previewButton = a.summary ? ` <button class="preview-summary-btn activity-link" data-summary="${encodeURIComponent(a.summary)}">Preview Summary</button>` : '';
+
+        return `
+            <div class="activity-item">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <div class="activity-title">${file}</div>
+                        <div class="activity-meta"><small>${processed}</small></div>
+                    </div>
+                    <div class="activity-actions">
+                        ${transcriptLink}
+                        ${summaryLink}
+                        ${previewButton}
+                    </div>
+                </div>
+                <div class="summary-preview hidden" data-for="${escapeHtml(a.summary || '')}" style="margin-top:0.75rem; white-space:pre-line; color:rgba(255,255,255,0.9);"></div>
+            </div>
+        `;
+    }).join('');
+}
+
+// handle preview clicks (delegated)
+document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.preview-summary-btn');
+    if (!btn) return;
+    const filename = decodeURIComponent(btn.getAttribute('data-summary'));
+    const item = btn.closest('.activity-item');
+    const preview = item.querySelector('.summary-preview');
+
+    if (!preview) return;
+    if (!preview.classList.contains('hidden')) {
+        preview.classList.add('hidden');
+        preview.innerHTML = '';
+        return;
+    }
+
+    preview.classList.remove('hidden');
+    preview.innerHTML = '<p class="muted">Loading...</p>';
+
+    try {
+        const res = await fetch(`http://127.0.0.1:8000/uploads/${encodeURIComponent(filename)}`);
+        if (!res.ok) {
+            preview.innerHTML = '<p class="muted">Could not load summary.</p>';
+            return;
+        }
+        const text = await res.text();
+        preview.textContent = text;
+    } catch (err) {
+        preview.innerHTML = '<p class="muted">Could not load summary.</p>';
+    }
+});

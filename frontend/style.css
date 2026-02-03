@@ -45,6 +45,138 @@ body {
     opacity: 0.9;
 }
 
+/* Header layout with actions */
+.header .container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.header-content {
+    text-align: left;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Activity button */
+.activity-button,
+.activity-button:link,
+.activity-button:visited {
+    background: rgba(255, 255, 255, 0.12);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.08);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none; /* remove underline for anchors */
+    vertical-align: middle;
+}
+
+.activity-button:hover,
+.activity-button:focus {
+    background: rgba(255, 255, 255, 0.18);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    outline: none;
+}
+
+.activity-button:focus {
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.12);
+}
+
+/* Activity panel / drawer */
+.activity-panel {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    width: 360px;
+    max-width: calc(100% - 3rem);
+    background: rgba(0,0,0,0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+    z-index: 1000;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.activity-list {
+    max-height: 60vh;
+    overflow: auto;
+}
+
+/* Empty state centering for history */
+.activity-list.empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 140px;
+}
+
+.activity-list.empty .muted {
+    text-align: center;
+    font-size: 1.05rem;
+    opacity: 0.95;
+}
+
+.activity-item {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.activity-title {
+    font-weight: 700;
+}
+
+.activity-meta small {
+    color: rgba(255,255,255,0.6);
+}
+
+.activity-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.activity-link {
+    background: rgba(255,255,255,0.04);
+    color: white;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.35rem;
+    text-decoration: none;
+    font-size: 0.9rem;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.activity-link:hover {
+    background: rgba(255,255,255,0.08);
+}
+
+.close-activity {
+    background: transparent;
+    color: rgba(255,255,255,0.9);
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
 /* Main Content */
 .main-content {
     padding: 2rem 0;
