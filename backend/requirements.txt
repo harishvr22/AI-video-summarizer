@@ -5,3 +5,4 @@ torch
 transformers
 moviepy
 numpy
+pymongo

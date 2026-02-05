@@ -1,10 +1,11 @@
 const API_URL = 'http://127.0.0.1:8000/summarize/';
 
+// App state
 let currentStage = 0;
 let uploadedFile = null;
 let isProcessing = false;
 
-// DOM elements
+// DOM elements (may be null on some pages)
 const uploadSection = document.getElementById('upload-section');
 const processingSection = document.getElementById('processing-section');
 const summarySection = document.getElementById('summary-section');
@@ -12,41 +13,60 @@ const uploadArea = document.getElementById('upload-area');
 const fileInput = document.getElementById('file-input');
 const uploadButton = document.getElementById('upload-button');
 
-// Initialize event listeners
+// Init
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeEventListeners);
 } else {
-    // DOM already ready (scripts loaded at end) — call directly
     initializeEventListeners();
 }
 
 function initializeEventListeners() {
-    // File upload events
-    uploadArea.addEventListener('click', () => fileInput.click());
-    uploadButton.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', handleFileSelect);
-    
-    // Drag and drop events
-    uploadArea.addEventListener('dragover', handleDragOver);
-    uploadArea.addEventListener('dragleave', handleDragLeave);
-    uploadArea.addEventListener('drop', handleDrop);
-    
-    // Summary actions
-    document.getElementById('copy-button').addEventListener('click', copyToClipboard);
-    document.getElementById('download-button').addEventListener('click', downloadSummary);
-    document.getElementById('reset-button').addEventListener('click', resetApp);
 
-    // History page loader (runs when on history.html)
-    if (document.getElementById('history-list')) {
+    /* =========================
+       UPLOAD PAGE ONLY
+    ==========================*/
+    if (uploadArea && fileInput) {
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('dragleave', handleDragLeave);
+        uploadArea.addEventListener('drop', handleDrop);
+    }
+
+    if (uploadButton && fileInput) {
+        uploadButton.addEventListener('click', () => fileInput.click());
+    }
+
+    if (fileInput) {
+        fileInput.addEventListener('change', handleFileSelect);
+    }
+
+    /* =========================
+       SUMMARY PAGE BUTTONS
+    ==========================*/
+    const copyBtn = document.getElementById('copy-button');
+    const downloadBtn = document.getElementById('download-button');
+    const resetBtn = document.getElementById('reset-button');
+
+    if (copyBtn) copyBtn.addEventListener('click', copyToClipboard);
+    if (downloadBtn) downloadBtn.addEventListener('click', downloadSummary);
+    if (resetBtn) resetBtn.addEventListener('click', resetApp);
+
+    /* =========================
+       HISTORY PAGE
+    ==========================*/
+    const historyList = document.getElementById('history-list');
+    if (historyList) {
         loadHistoryPage();
     }
-    
-    // Prevent default drag behaviors on document
+
+    // Global drag prevention
     document.addEventListener('dragover', e => e.preventDefault());
     document.addEventListener('drop', e => e.preventDefault());
 }
 
-// File handling functions
+/* =========================
+   FILE HANDLING
+=========================*/
 function handleDragOver(e) {
     e.preventDefault();
     uploadArea.classList.add('drag-over');
@@ -60,15 +80,12 @@ function handleDragLeave(e) {
 function handleDrop(e) {
     e.preventDefault();
     uploadArea.classList.remove('drag-over');
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-        const file = files[0];
-        if (isVideoFile(file)) {
-            handleFileUpload(file);
-        } else {
-            showAlert('Please select a valid video file.');
-        }
+
+    const file = e.dataTransfer.files[0];
+    if (file && isVideoFile(file)) {
+        handleFileUpload(file);
+    } else {
+        showAlert('Please select a valid video file.');
     }
 }
 
@@ -82,332 +99,156 @@ function handleFileSelect(e) {
 }
 
 function isVideoFile(file) {
-    const validTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/wmv', 'video/webm'];
-    return validTypes.includes(file.type);
+    return ['video/mp4','video/avi','video/mov','video/wmv','video/webm'].includes(file.type);
 }
 
 function handleFileUpload(file) {
     if (isProcessing) return;
-    
+
     uploadedFile = file;
     document.getElementById('file-name').textContent = file.name;
-    
-    // Switch to processing view
+
     uploadSection.classList.add('hidden');
     processingSection.classList.remove('hidden');
-    
-    // Start processing (real API + UI stages)
+
     startProcessing();
 }
 
-// Processing functions (adaptive progress + real API)
+/* =========================
+   PROCESSING
+=========================*/
 async function startProcessing() {
-    if (!uploadedFile) return;
-
     isProcessing = true;
     currentStage = 0;
 
-    // Prepare FormData
     const formData = new FormData();
     formData.append("file", uploadedFile);
 
-    // Start backend request
     const backendPromise = fetch(API_URL, {
         method: "POST",
         body: formData
     });
 
-    // Animate stages
-    await processStageAdaptive(1, backendPromise, false);
-    await processStageAdaptive(2, backendPromise, false);
-    await processStageAdaptive(3, backendPromise, true);
+    await processStageAdaptive(1, false);
+    await processStageAdaptive(2, false);
+    await processStageAdaptive(3, true);
 
-    // Wait for backend to finish
     try {
-        const response = await backendPromise;
-        if (!response.ok) {
-            showAlert("Error: could not process video.");
-            return;
-        }
-        const data = await response.json();
+        const res = await backendPromise;
+        if (!res.ok) throw new Error();
 
-        // ✅ Now complete last stage
+        const data = await res.json();
+
         finishFinalStage(3);
-
-        // Switch to summary view
         processingSection.classList.add('hidden');
         summarySection.classList.remove('hidden');
+
         document.getElementById('summary-file-name').textContent = uploadedFile.name;
         document.getElementById('processed-time').textContent = new Date().toLocaleString();
         document.getElementById('summary-text').textContent = data.summary;
 
-    } catch (err) {
-        console.error(err);
-        showAlert("An error occurred while contacting the backend.");
+    } catch {
+        showAlert("Error processing video");
     }
 
     isProcessing = false;
 }
 
-async function processStageAdaptive(stageNum, backendPromise, isFinalStage) {
+async function processStageAdaptive(stageNum, isFinal) {
     currentStage = stageNum;
     updateOverallProgress();
 
-    const stage = document.getElementById(`stage-${stageNum}`);
-    const progressText = document.getElementById(`progress-${stageNum}`);
     const progressFill = document.getElementById(`progress-fill-${stageNum}`);
+    const progressText = document.getElementById(`progress-${stageNum}`);
 
-    stage.classList.add('active');
     let progress = 0;
-    const maxLimit = isFinalStage ? 90 : 100;
+    const max = isFinal ? 90 : 100;
 
-    // Fill until 90% if final stage, otherwise full
-    while (progress < maxLimit) {
+    while (progress < max) {
         progress += 2;
-        progressText.textContent = `${progress}%`;
         progressFill.style.width = `${progress}%`;
-        await sleep(150);
+        progressText.textContent = `${progress}%`;
+        await sleep(120);
     }
 
-    if (!isFinalStage) {
-        completeStage(stageNum);
-    }
+    if (!isFinal) completeStage(stageNum);
 }
 
 function finishFinalStage(stageNum) {
-    const stage = document.getElementById(`stage-${stageNum}`);
-    const progressText = document.getElementById(`progress-${stageNum}`);
-    const progressFill = document.getElementById(`progress-fill-${stageNum}`);
-
-    progressText.textContent = `100%`;
-    progressFill.style.width = `100%`;
-
+    document.getElementById(`progress-fill-${stageNum}`).style.width = `100%`;
+    document.getElementById(`progress-${stageNum}`).textContent = `100%`;
     completeStage(stageNum);
-    updateOverallProgress();
 }
 
 function completeStage(stageNum) {
     const stage = document.getElementById(`stage-${stageNum}`);
-    const progressText = document.getElementById(`progress-${stageNum}`);
-    const completedText = stage.querySelector('.completed-text');
-    const stageNumber = stage.querySelector('.stage-number');
-    const stageCheck = stage.querySelector('.stage-check');
-    
-    stage.classList.remove('active');
     stage.classList.add('completed');
-    
-    progressText.classList.add('hidden');
-    completedText.classList.remove('hidden');
-    stageNumber.classList.add('hidden');
-    stageCheck.classList.remove('hidden');
+    stage.classList.remove('active');
 }
 
 function updateOverallProgress() {
-    const overallText = document.getElementById('overall-text');
-    const overallProgressFill = document.getElementById('overall-progress-fill');
-    
-    const progress = (currentStage / 3) * 100;
-    overallText.textContent = `Overall Progress: Stage ${currentStage} of 3`;
-    overallProgressFill.style.width = `${progress}%`;
+    const percent = (currentStage / 3) * 100;
+    document.getElementById('overall-progress-fill').style.width = `${percent}%`;
 }
 
-// Summary actions
+/* =========================
+   SUMMARY ACTIONS
+=========================*/
 async function copyToClipboard() {
-    const summaryText = document.getElementById('summary-text').textContent;
-    
-    try {
-        await navigator.clipboard.writeText(summaryText);
-        showAlert('Summary copied to clipboard!');
-    } catch (err) {
-        // Fallback
-        const textArea = document.createElement('textarea');
-        textArea.value = summaryText;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        showAlert('Summary copied to clipboard!');
-    }
+    await navigator.clipboard.writeText(
+        document.getElementById('summary-text').textContent
+    );
+    showAlert("Copied!");
 }
 
 function downloadSummary() {
-    const summaryText = document.getElementById('summary-text').textContent;
-    const fileName = uploadedFile ? uploadedFile.name.replace(/\.[^/.]+$/, '') : 'video';
-    
-    const blob = new Blob([summaryText], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    
+    const text = document.getElementById('summary-text').textContent;
+    const blob = new Blob([text], { type: 'text/plain' });
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `${fileName}_summary.txt`;
-    document.body.appendChild(a);
+    a.href = URL.createObjectURL(blob);
+    a.download = 'summary.txt';
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showAlert('Summary downloaded successfully!');
 }
 
 function resetApp() {
-    currentStage = 0;
-    uploadedFile = null;
-    isProcessing = false;
-    fileInput.value = '';
-    
-    for (let i = 1; i <= 3; i++) {
-        const stage = document.getElementById(`stage-${i}`);
-        const progressText = document.getElementById(`progress-${i}`);
-        const completedText = stage.querySelector('.completed-text');
-        const progressFill = document.getElementById(`progress-fill-${i}`);
-        const stageNumber = stage.querySelector('.stage-number');
-        const stageCheck = stage.querySelector('.stage-check');
-        
-        stage.classList.remove('active', 'completed');
-        progressText.classList.remove('hidden');
-        completedText.classList.add('hidden');
-        progressText.textContent = '0%';
-        progressFill.style.width = '0%';
-        stageNumber.classList.remove('hidden');
-        stageCheck.classList.add('hidden');
-    }
-    
-    document.getElementById('overall-text').textContent = 'Overall Progress: Stage 1 of 3';
-    document.getElementById('overall-progress-fill').style.width = '0%';
-    
-    uploadSection.classList.remove('hidden');
-    processingSection.classList.add('hidden');
-    summarySection.classList.add('hidden');
+    location.reload();
 }
 
-// Utility
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function showAlert(message) {
-    alert(message);
-}
-
-// Activity render helpers
-function renderActivities(activities, container) {
-    if (!activities || activities.length === 0) {
-        container.innerHTML = '<p class="muted">No activity yet.</p>';
-        return;
-    }
-    container.innerHTML = activities.map(a => {
-        const processed = a.processed_time ? new Date(a.processed_time).toLocaleString() : '—';
-        const file = a.file || a.id;
-        return `
-            <div class="activity-item">
-                <div class="activity-title">${escapeHtml(file)}</div>
-                <div class="activity-meta"><small>${processed}</small></div>
-                <div class="activity-actions">
-                    ${a.transcript ? `<a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.transcript)}" class="activity-link" target="_blank">Transcript</a>` : ''}
-                    ${a.summary ? `<a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.summary)}" class="activity-link" target="_blank">Summary</a>` : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
-}
-
-// small helper to avoid XSS in template
-function escapeHtml(unsafe) {
-    return unsafe.replace(/[&<"'">]/g, function(m) {
-        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
-    });
-}
-
-// History page utilities
+/* =========================
+   HISTORY PAGE
+=========================*/
 async function loadHistoryPage() {
     const list = document.getElementById('history-list');
-    if (!list) return;
-
-    // Default state in HTML is "No data available." (centered with .empty)
-    // Only replace content when we have actual activities to render.
     try {
         const res = await fetch('http://127.0.0.1:8000/activities/');
-        if (!res.ok) {
-            // leave default message as-is
-            list.classList.add('empty');
-            return;
-        }
-
         const data = await res.json();
-        const activities = data.activities || [];
-        if (!activities.length) {
-            // no activities — leave default
-            list.classList.add('empty');
-            return;
-        }
-
-        // Render results (remove empty state)
-        list.classList.remove('empty');
-        renderHistory(activities, list);
-    } catch (err) {
-        // network error — keep default message
-        list.classList.add('empty');
+        renderHistory(data.activities || [], list);
+    } catch {
+        list.innerHTML = '<p>No history found.</p>';
     }
 }
 
 function renderHistory(activities, container) {
-    if (!activities || activities.length === 0) {
-        container.innerHTML = '<p class="muted">No uploads yet.</p>';
+    if (!activities.length) {
+        container.innerHTML = '<p>No activity yet.</p>';
         return;
     }
 
-    container.innerHTML = activities.map(a => {
-        const processed = a.processed_time ? new Date(a.processed_time).toLocaleString() : '—';
-        const file = escapeHtml(a.file || a.id);
-        const transcriptLink = a.transcript ? ` <a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.transcript)}" class="activity-link" target="_blank">Transcript</a>` : '';
-        const summaryLink = a.summary ? ` <a href="http://127.0.0.1:8000/uploads/${encodeURIComponent(a.summary)}" class="activity-link" target="_blank">Summary File</a>` : '';
-        const previewButton = a.summary ? ` <button class="preview-summary-btn activity-link" data-summary="${encodeURIComponent(a.summary)}">Preview Summary</button>` : '';
-
-        return `
-            <div class="activity-item">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                        <div class="activity-title">${file}</div>
-                        <div class="activity-meta"><small>${processed}</small></div>
-                    </div>
-                    <div class="activity-actions">
-                        ${transcriptLink}
-                        ${summaryLink}
-                        ${previewButton}
-                    </div>
-                </div>
-                <div class="summary-preview hidden" data-for="${escapeHtml(a.summary || '')}" style="margin-top:0.75rem; white-space:pre-line; color:rgba(255,255,255,0.9);"></div>
-            </div>
-        `;
-    }).join('');
+    container.innerHTML = activities.map(a => `
+        <div class="activity-item">
+            <strong>${a.file}</strong><br/>
+            <small>${new Date(a.processed_time).toLocaleString()}</small>
+        </div>
+    `).join('');
 }
 
-// handle preview clicks (delegated)
-document.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.preview-summary-btn');
-    if (!btn) return;
-    const filename = decodeURIComponent(btn.getAttribute('data-summary'));
-    const item = btn.closest('.activity-item');
-    const preview = item.querySelector('.summary-preview');
+/* =========================
+   UTIL
+=========================*/
+function sleep(ms) {
+    return new Promise(r => setTimeout(r, ms));
+}
 
-    if (!preview) return;
-    if (!preview.classList.contains('hidden')) {
-        preview.classList.add('hidden');
-        preview.innerHTML = '';
-        return;
-    }
-
-    preview.classList.remove('hidden');
-    preview.innerHTML = '<p class="muted">Loading...</p>';
-
-    try {
-        const res = await fetch(`http://127.0.0.1:8000/uploads/${encodeURIComponent(filename)}`);
-        if (!res.ok) {
-            preview.innerHTML = '<p class="muted">Could not load summary.</p>';
-            return;
-        }
-        const text = await res.text();
-        preview.textContent = text;
-    } catch (err) {
-        preview.innerHTML = '<p class="muted">Could not load summary.</p>';
-    }
-});
+function showAlert(msg) {
+    alert(msg);
+}
